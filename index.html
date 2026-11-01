@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>खुशबू इलेक्ट्रॉनिक्स - Cloud ERP & CRM</title>
+  
+  <!-- Firebase SDKs for Cloud Real-Time Multi-Device Sync -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <style>
+    :root {
+      --primary: #0a2558;
+      --accent: #1e60d5;
+      --sale-theme: #059669;
+      --repair-theme: #d97706;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #cbd5e1;
+      --danger: #dc2626;
+      --wa: #25d366;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; }
+
+    header {
+      background: linear-gradient(135deg, #071b40 0%, #0f347a 100%);
+      color: white;
+      padding: 14px 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .top-header { display: flex; justify-content: space-between; align-items: center; }
+    .shop-title { font-size: 1.35rem; font-weight: 800; }
+    .cloud-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      cursor: pointer;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #e2e8f0; }
+    .dot-online { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+
+    .director-line { font-size: 0.8rem; color: #cbd5e1; margin-top: 3px; }
+
+    /* Main Mode Switcher: सेल्स बनाम रिपेयर */
+    .module-switch-bar {
+      display: flex;
+      background: #06193a;
+      padding: 6px 12px;
+      gap: 10px;
+    }
+    .module-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: 0.2s;
+      color: #94a3b8;
+      background: rgba(255,255,255,0.06);
+    }
+    .module-btn.active-repair {
+      background: var(--repair-theme);
+      color: white;
+      box-shadow: 0 2px 8px rgba(217, 119, 6, 0.4);
+    }
+    .module-btn.active-sale {
+      background: var(--sale-theme);
+      color: white;
+      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
+    }
+
+    /* Sub Tabs */
+    .sub-tabs {
+      display: flex;
+      background: white;
+      border-bottom: 2px solid var(--border);
+      overflow-x: auto;
+      padding: 0 8px;
+    }
+    .sub-tab {
+      padding: 12px 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+    }
+    .sub-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      background: #f8fafc;
+    }
+
+    .container { max-width: 800px; margin: 14px auto; padding: 0 14px; }
+
+    /* Summary Stat Cards */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .stat-box {
+      background: white;
+      padding: 10px 6px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .stat-val { font-size: 1.15rem; font-weight: 800; color: var(--primary); }
+    .stat-lbl { font-size: 0.68rem; color: var(--muted); font-weight: 700; margin-top: 2px; }
+
+    .search-bar {
+      width: 100%;
+      padding: 12px 18px;
+      border-radius: 25px;
+      border: 1.5px solid var(--border);
+      font-size: 0.92rem;
+      outline: none;
+      background: white;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .search-bar:focus { border-color: var(--accent); }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+    .card-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 8px; }
+    .tag-title { font-weight: 800; font-size: 0.98rem; }
+    
+    .status-badge { padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; }
+    .badge-pending { background: #fef3c7; color: #b45309; }
+    .badge-ready { background: #dcfce7; color: #15803d; }
+    .badge-done { background: #f1f5f9; color: #475569; }
+
+    .btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.82rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+    }
+    .btn-wa { background: var(--wa); color: white; }
+    .btn-outline { background: white; border: 1.5px solid var(--border); color: #334155; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-sale { background: var(--sale-theme); color: white; }
+    .btn-repair { background: var(--repair-theme); color: white; }
+    .btn-danger { background: #fee2e2; color: var(--danger); border: 1px solid #fca5a5; }
+
+    .floating-fab {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      color: white;
+      padding: 14px 22px;
+      border-radius: 30px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.65);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 14px;
+      backdrop-filter: blur(2px);
+    }
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-head { font-size: 1.15rem; font-weight: 800; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+    .form-group { margin-bottom: 11px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 4px; }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .form-group input:focus { border-color: var(--accent); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+    @media print {
+      body * { visibility: hidden; }
+      #printArea, #printArea * { visibility: visible; }
+      #printArea { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="top-header">
+    <div>
+      <div class="shop-title">खुशबू इलेक्ट्रॉनिक्स</div>
+      <div class="director-line">संचालक: के. एल. सैनी &bull; रेवाड़ी (हरियाणा)</div>
+    </div>
+    <div class="cloud-status" onclick="openConfigModal()" title="क्लाउड सेटिंग्स">
+      <div class="status-dot" id="cloudDot"></div>
+      <span id="cloudLabel">लोकल मोड</span>
+    </div>
+  </div>
+</header>
+
+<!-- मुख्य मोड स्विच: रिपेयर अलग, सेल्स अलग -->
+<div class="module-switch-bar">
+  <button class="module-btn active-repair" id="btnModeRepair" onclick="setMasterMode('repair')">
+    🔧 रिपेयरिंग डिवीज़न
+  </button>
+  <button class="module-btn" id="btnModeSale" onclick="setMasterMode('sale')">
+    💻 लैपटॉप सेल्स डिवीज़न
+  </button>
+</div>
+
+<!-- रिपेयरिंग के सब-टैब्स -->
+<div class="sub-tabs" id="repairSubTabs">
+  <div class="sub-tab active" id="tabRJobs" onclick="setRepairTab('jobs')">📋 सभी रिपेयर टोकन</div>
+  <div class="sub-tab" id="tabRUdhari" onclick="setRepairTab('udhari')">📕 रिपेयर उधारी खाता</div>
+  <div class="sub-tab" id="tabRParts" onclick="setRepairTab('parts')">⚡ स्पेयर पार्ट्स स्टॉक</div>
+</div>
+
+<!-- सेल्स के सब-टैब्स -->
+<div class="sub-tabs" id="saleSubTabs" style="display:none;">
+  <div class="sub-tab active" id="tabSInventory" onclick="setSaleTab('inventory')">💻 रिफर्बिश्ड लैपटॉप स्टॉक</div>
+  <div class="sub-tab" id="tabSOrders" onclick="setSaleTab('orders')">🧾 बिलिंग / बिक्री रजिस्टर</div>
+  <div class="sub-tab" id="tabSUdhari" onclick="setSaleTab('udhari')">📕 सेल्स उधारी खाता</div>
+  <div class="sub-tab" id="tabSCrm" onclick="setSaleTab('crm')">👥 लैपटॉप कस्टमर CRM</div>
+</div>
+
+<div class="container">
+  <!-- सांख्यिकी बार -->
+  <div class="stats-row" id="statsRow">
+    <!-- डायनामिक रेंडर होगा -->
+  </div>
+
+  <input type="text" id="mainSearch" class="search-bar" placeholder="🔍 खोजें (नाम, मॉडल, फोन, टोकन या सीरियल नंबर)..." onkeyup="renderCurrentView()">
+
+  <!-- व्यू कंटेनर -->
+  <div id="viewContainer"></div>
+</div>
+
+<!-- फ्लोटिंग एक्शन बटन -->
+<button class="floating-fab btn-repair" id="mainFab" onclick="openActiveModal()">
+  + नया रिपेयर जॉब
+</button>
+
+<!-- रिपेयर टोकन मोडल -->
+<div id="repairModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-head" style="color:var(--repair-theme);">🔧 नया रिपेयर जॉब टोकन दर्ज करें</div>
+    <div class="form-group">
+      <label>ग्राहक का नाम *</label>
+      <input type="text" id="rCustName" placeholder="उदा. सुरेश शर्मा" required>
+    </div>
+    <div class="form-group">
+      <label>मोबाइल नंबर (WhatsApp) *</label>
+      <input type="tel" id="rPhone" placeholder="उदा. 9812345678" required>
+    </div>
+    <div class="form-group">
+      <label>लैपटॉप मॉडल & कॉन्फ़िग</label>
+      <input type="text" id="rModel" placeholder="उदा. Dell Latitude 7490 (i5 8th)">
+    </div>
+    <div class="form-group">
+      <label>समस्या / कंप्लेंट विवरण</label>
+      <textarea id="rIssue" rows="2" placeholder="उदा. 3V/5V रेल शॉर्ट, नो पावर / नो डिस्प्ले"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>साथ में क्या आया?</label>
+        <select id="rAccessories">
+          <option value="लैपटॉप + चार्जर">लैपटॉप + चार्जर</option>
+          <option value="सिर्फ लैपटॉप">सिर्फ लैपटॉप</option>
+          <option value="लैपटॉप + बैग + चार्जर">लैपटॉप + बैग + चार्जर</option>
+          <option value="मदरबोर्ड (Loose Board)">मदरबोर्ड (Loose Board)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>अनुमानित डिलीवरी तारीख</label>
+        <input type="date" id="rEstDate">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>कुल तय खर्च (₹) *</label>
+        <input type="number" id="rCost" placeholder="₹">
+      </div>
+      <div class="form-group">
+        <label>एडवांस जमा (₹)</label>
+        <input type="number" id="rAdvance" placeholder="₹ 0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>स्टेटस</label>
+      <select id="rStatus">
+        <option value="pending">प्रोग्रेस में (Pending)</option>
+        <option value="testing">टेस्टिंग चल रही है (In-Testing)</option>
+        <option value="ready">तैयार है (Ready for Delivery)</option>
+        <option value="delivered">डिलीवर / काम पूरा (Delivered)</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeModal('repairModal')">रद्द करें</button>
+      <button class="btn btn-repair" onclick="saveRepairJob()">💾 क्लाउड पर सेव करें</button>
+    </div>
+  </div>
+</div>
+
+<!-- लैपटॉप स्टॉक मोडल -->
+<div id="stockModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-head" style="color:var(--sale-theme);">💻 नया रिफर्बिश्ड लैपटॉप स्टॉक में जोड़ें</div>
+    <div class="form-group">
+      <label>ब्रांड व मॉडल *</label>
+      <input type="text" id="sModel" placeholder="उदा. ThinkPad T480 / Latitude 5400" required>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>प्रोसेसर & जनरेशन</label>
+        <input type="text" id="sCpu" placeholder="उदा. i5 8th Gen Quad">
+      </div>
+      <div class="form-group">
+        <label>RAM (GB)</label>
+        <input type="text" id="sRam" placeholder="उदा. 8GB / 16GB">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>स्टोरेज (SSD/NVMe)</label>
+        <input type="text" id="sStorage" placeholder="उदा. 256GB / 512GB">
+      </div>
+      <div class="form-group">
+        <label>बिक्री मूल्य (₹) *</label>
+        <input type="number" id="sPrice" placeholder="उदा. 19500" required>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>टेस्टिंग वारंटी</label>
+      <select id="sWarranty">
+        <option value="1 महीने (30 दिन) की वारंटी">1 महीने (30 दिन) की वारंटी</option>
+        <option value="15 दिन की टेस्टिंग वारंटी">15 दिन की टेस्टिंग वारंटी</option>
+        <option value="बिना वारंटी">बिना वारंटी</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeModal('stockModal')">रद्द करें</button>
+      <button class="btn btn-sale" onclick="saveStockItem()">💾 स्टॉक में जोड़ें</button>
+    </div>
+  </div>
+</div>
+
+<!-- सेल्स बिलिंग / बिक्री दर्ज मोडल -->
+<div id="saleOrderModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-head" style="color:var(--sale-theme);">🧾 नया लैपटॉप बिक्री / बिल दर्ज करें</div>
+    <div class="form-group">
+      <label>ग्राहक का नाम *</label>
+      <input type="text" id="soCustName" placeholder="उदा. राहुल यादव" required>
+    </div>
+    <div class="form-group">
+      <label>मोबाइल नंबर (WhatsApp) *</label>
+      <input type="tel" id="soPhone" placeholder="उदा. 9812345678" required>
+    </div>
+    <div class="form-group">
+      <label>लैपटॉप मॉडल & विवरण *</label>
+      <input type="text" id="soModel" placeholder="उदा. HP EliteBook 840 G5 (i5 8th/16GB/256GB)">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>बिक्री कीमत (₹) *</label>
+        <input type="number" id="soAmount" placeholder="₹" required>
+      </div>
+      <div class="form-group">
+        <label>प्राप्त राशि (Paid ₹) *</label>
+        <input type="number" id="soPaid" placeholder="₹">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>वारंटी दी गई</label>
+      <select id="soWarranty">
+        <option value="1 महीने (30 दिन) की वारंटी">1 महीने (30 दिन) की वारंटी</option>
+        <option value="15 दिन की वारंटी">15 दिन की वारंटी</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeModal('saleOrderModal')">रद्द करें</button>
+      <button class="btn btn-sale" onclick="saveSaleOrder()">💾 बिल सेव करें</button>
+    </div>
+  </div>
+</div>
+
+<!-- पार्ट्स मोडल -->
+<div id="partModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-head" style="color:var(--repair-theme);">⚡ नया स्पेयर पार्ट जोड़ें</div>
+    <div class="form-group">
+      <label>पार्ट का नाम / पार्ट नंबर *</label>
+      <input type="text" id="pName" placeholder="उदा. NVMe 256GB SSD / DDR4 8GB RAM / DC Jack" required>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>स्टॉक में मात्रा (Qty)</label>
+        <input type="number" id="pQty" placeholder="उदा. 5">
+      </div>
+      <div class="form-group">
+        <label>मूल्य (₹)</label>
+        <input type="number" id="pPrice" placeholder="उदा. 1200">
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeModal('partModal')">रद्द करें</button>
+      <button class="btn btn-repair" onclick="savePartItem()">पार्ट सेव करें</button>
+    </div>
+  </div>
+</div>
+
+<!-- क्लाउड सेटअप मोडल (Firebase Realtime Database) -->
+<div id="configModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-head" style="color:var(--primary);">☁️ रियल-टाइम क्लाउड सिंक सेटअप</div>
+    <p style="font-size:0.82rem; color:var(--muted); margin-bottom:12px;">
+      फ़ोन और लैपटॉप में एक साथ बिना किसी अंतर के डेटा अपडेट रखने के लिए Firebase का फ़्री रियल-टाइम डेटाबेस लिंक यहाँ डालें:
+    </p>
+    <div class="form-group">
+      <label>Firebase Database URL</label>
+      <input type="text" id="cfgDbUrl" placeholder="उदा. https://khusboo-erp-default-rtdb.firebaseio.com">
+    </div>
+    <div class="form-group">
+      <label>Firebase API Key (वैकल्पिक)</label>
+      <input type="text" id="cfgApiKey" placeholder="API Key">
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeModal('configModal')">बंद करें</button>
+      <button class="btn btn-primary" onclick="saveCloudConfig()">कन्फर्म & कनेक्ट</button>
+    </div>
+  </div>
+</div>
+
+<!-- प्रिंट एरिया -->
+<div id="printArea" style="display:none; font-family:sans-serif; max-width:380px; margin:auto; border:1px solid #333; padding:15px;">
+  <div style="text-align:center; border-bottom:1px dashed #333; padding-bottom:8px;">
+    <h2 style="margin:0; font-size:20px;">खुशबू इलेक्ट्रॉनिक्स</h2>
+    <p style="margin:2px 0; font-size:11px;">सुंदरलाल मार्केट, नियर एवरेस्ट सिनेमा, रेवाड़ी (हरियाणा)</p>
+    <p style="margin:2px 0; font-size:11px;">संचालक: के. एल. सैनी &bull; 📞 7206770673, 7015290445</p>
+    <h3 id="receiptTypeHeading" style="margin:8px 0 0 0; font-size:14px; text-decoration:underline;">जॉब कार्ड पर्ची</h3>
+  </div>
+  <div id="printContent" style="padding:10px 0; font-size:12px; line-height:1.7;"></div>
+  <div style="text-align:center; border-top:1px dashed #333; padding-top:8px; font-size:10px;">
+    खुशबू इलेक्ट्रॉनिक्स पर पधारने के लिए धन्यवाद!
+  </div>
+</div>
+
+<script>
+  // मास्टर स्टेट
+  let masterMode = 'repair'; // 'repair' या 'sale'
+  let repairTab = 'jobs';    // 'jobs', 'udhari', 'parts'
+  let saleTab = 'inventory'; // 'inventory', 'orders', 'udhari', 'crm'
+
+  // डेटा संरचना
+  let appData = {
+    repairs: JSON.parse(localStorage.getItem('ke_repairs')) || [
+      { id: 'JOB-201', name: 'विकास कुमार', phone: '9896012345', model: 'Dell Latitude 3400 (i5 8th)', issue: '3V/5V रेल शॉर्ट - नो डिस्प्ले', accessories: 'लैपटॉप + चार्जर', cost: 1800, advance: 500, status: 'pending', date: '31 अक्टूबर' },
+      { id: 'JOB-200', name: 'अनिल सैनी', phone: '9416012345', model: 'HP ProBook 440 G5', issue: 'स्क्रीन चेंज & SSD अपग्रेड', accessories: 'लैपटॉप + बैग', cost: 3500, advance: 3500, status: 'delivered', date: '28 अक्टूबर' }
+    ],
+    salesStock: JSON.parse(localStorage.getItem('ke_sales_stock')) || [
+      { id: 'STK-101', model: 'Lenovo ThinkPad T480', cpu: 'i5 8th Gen Quad', ram: '16GB DDR4', storage: '256GB NVMe SSD', price: 19500, warranty: '1 महीने (30 दिन) की वारंटी' }
+    ],
+    salesOrders: JSON.parse(localStorage.getItem('ke_sales_orders')) || [
+      { id: 'INV-101', name: 'रोहित वर्मा', phone: '9812001122', model: 'Dell Latitude 7490', amount: 21000, paid: 15000, warranty: '1 महीने की वारंटी', date: '30 अक्टूबर' }
+    ],
+    parts: JSON.parse(localStorage.getItem('ke_parts')) || [
+      { id: 'PRT-1', name: 'NVMe SSD 256GB (Crucial/Kingston)', qty: 4, price: 1850 },
+      { id: 'PRT-2', name: 'DDR4 8GB Laptop RAM 2666MHz', qty: 6, price: 1200 }
+    ]
+  };
+
+  let dbRef = null;
+
+  function initCloud() {
+    const dbUrl = localStorage.getItem('ke_cloud_url');
+    if(dbUrl && window.firebase) {
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp({ databaseURL: dbUrl });
+        }
+        dbRef = firebase.database().ref('khusboo_erp_data');
+        
+        // रियल-टाइम लिसनर: जैसे ही फोन या पीसी कहीं से भी अपडेट होगा, दोनों जगह स्वतः रिफ्लेक्ट होगा
+        dbRef.on('value', (snapshot) => {
+          const val = snapshot.val();
+          if(val) {
+            appData = val;
+            saveLocalCache();
+            renderCurrentView();
+          }
+        });
+
+        document.getElementById('cloudDot').className = 'status-dot dot-online';
+        document.getElementById('cloudLabel').innerText = 'क्लाउड लाइव';
+      } catch(err) {
+        console.error(err);
+      }
+    }
+  }
+
+  function syncToCloud() {
+    saveLocalCache();
+    if(dbRef) {
+      dbRef.set(appData);
+    }
+  }
+
+  function saveLocalCache() {
+    localStorage.setItem('ke_repairs', JSON.stringify(appData.repairs || []));
+    localStorage.setItem('ke_sales_stock', JSON.stringify(appData.salesStock || []));
+    localStorage.setItem('ke_sales_orders', JSON.stringify(appData.salesOrders || []));
+    localStorage.setItem('ke_parts', JSON.stringify(appData.parts || []));
+  }
+
+  // मोड स्विचर (रिपेयर vs सेल्स)
+  function setMasterMode(mode) {
+    masterMode = mode;
+    const btnRepair = document.getElementById('btnModeRepair');
+    const btnSale = document.getElementById('btnModeSale');
+    const rTabs = document.getElementById('repairSubTabs');
+    const sTabs = document.getElementById('saleSubTabs');
+    const fab = document.getElementById('mainFab');
+
+    if(mode === 'repair') {
+      btnRepair.className = 'module-btn active-repair';
+      btnSale.className = 'module-btn';
+      rTabs.style.display = 'flex';
+      sTabs.style.display = 'none';
+      fab.className = 'floating-fab btn-repair';
+      fab.innerHTML = '+ नया रिपेयर टोकन';
+    } else {
+      btnRepair.className = 'module-btn';
+      btnSale.className = 'module-btn active-sale';
+      rTabs.style.display = 'none';
+      sTabs.style.display = 'flex';
+      fab.className = 'floating-fab btn-sale';
+      fab.innerHTML = '+ नया लैपटॉप जोड़ें / बिल बनाएँ';
+    }
+    renderCurrentView();
+  }
+
+  function setRepairTab(tab) {
+    repairTab = tab;
+    ['RJobs', 'RUdhari', 'RParts'].forEach(t => document.getElementById('tab' + t).classList.remove('active'));
+    if(tab === 'jobs') document.getElementById('tabRJobs').classList.add('active');
+    if(tab === 'udhari') document.getElementById('tabRUdhari').classList.add('active');
+    if(tab === 'parts') document.getElementById('tabRParts').classList.add('active');
+    renderCurrentView();
+  }
+
+  function setSaleTab(tab) {
+    saleTab = tab;
+    ['SInventory', 'SOrders', 'SUdhari', 'SCrm'].forEach(t => document.getElementById('tab' + t).classList.remove('active'));
+    if(tab === 'inventory') document.getElementById('tabSInventory').classList.add('active');
+    if(tab === 'orders') document.getElementById('tabSOrders').classList.add('active');
+    if(tab === 'udhari') document.getElementById('tabSUdhari').classList.add('active');
+    if(tab === 'crm') document.getElementById('tabSCrm').classList.add('active');
+    renderCurrentView();
+  }
+
+  function renderCurrentView() {
+    const q = document.getElementById('mainSearch').value.toLowerCase();
+    const stats = document.getElementById('statsRow');
+    const box = document.getElementById('viewContainer');
+
+    if(masterMode === 'repair') {
+      renderRepairStats();
+      if(repairTab === 'jobs') renderRepairJobs(q);
+      else if(repairTab === 'udhari') renderRepairUdhari(q);
+      else if(repairTab === 'parts') renderPartsView(q);
+    } else {
+      renderSaleStats();
+      if(saleTab === 'inventory') renderSaleInventory(q);
+      else if(saleTab === 'orders') renderSaleOrders(q);
+      else if(saleTab === 'udhari') renderSaleUdhari(q);
+      else if(saleTab === 'crm') renderSaleCRM(q);
+    }
+  }
+
+  // रिपेयर स्टेट्स
+  function renderRepairStats() {
+    const list = appData.repairs || [];
+    const pending = list.filter(j => j.status === 'pending' || j.status === 'testing').length;
+    const ready = list.filter(j => j.status === 'ready').length;
+    const delivered = list.filter(j => j.status === 'delivered').length;
+    let due = 0;
+    list.forEach(j => {
+      const bal = (Number(j.cost)||0) - (Number(j.advance)||0);
+      if(bal > 0) due += bal;
+    });
+
+    document.getElementById('statsRow').innerHTML = `
+      <div class="stat-box"><div class="stat-val">${pending}</div><div class="stat-lbl">पेंडिंग रिपेयर</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--repair-theme)">${ready}</div><div class="stat-lbl">रेडी/तैयार</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--sale-theme)">${delivered}</div><div class="stat-lbl">डिलीवर डन</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--danger)">₹${due}</div><div class="stat-lbl">रिपेयर उधारी</div></div>
+    `;
+  }
+
+  // सेल्स स्टेट्स
+  function renderSaleStats() {
+    const stock = appData.salesStock || [];
+    const orders = appData.salesOrders || [];
+    let due = 0;
+    let totalSales = 0;
+    orders.forEach(o => {
+      totalSales += Number(o.amount)||0;
+      const b = (Number(o.amount)||0) - (Number(o.paid)||0);
+      if(b > 0) due += b;
+    });
+
+    document.getElementById('statsRow').innerHTML = `
+      <div class="stat-box"><div class="stat-val" style="color:var(--sale-theme)">${stock.length}</div><div class="stat-lbl">स्टॉक लैपटॉप</div></div>
+      <div class="stat-box"><div class="stat-val">${orders.length}</div><div class="stat-lbl">कुल बिक्री बिल</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--accent)">₹${totalSales}</div><div class="stat-lbl">कुल सेल टर्नओवर</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--danger)">₹${due}</div><div class="stat-lbl">सेल्स उधारी</div></div>
+    `;
+  }
+
+  // 1. रिपेयर जॉब्स लिस्ट
+  function renderRepairJobs(q) {
+    const box = document.getElementById('viewContainer');
+    let list = appData.repairs || [];
+    if(q) {
+      list = list.filter(j => j.name.toLowerCase().includes(q) || j.phone.includes(q) || j.id.toLowerCase().includes(q) || (j.model && j.model.toLowerCase().includes(q)));
+    }
+    if(list.length === 0) { box.innerHTML = '<div style="text-align:center; padding:30px; color:#94a3b8;">कोई रिपेयर जॉब नहीं मिला।</div>'; return; }
+
+    box.innerHTML = list.map(j => {
+      const bal = (Number(j.cost)||0) - (Number(j.advance)||0);
+      let badgeClass = j.status==='ready' ? 'badge-ready' : (j.status==='delivered' ? 'badge-done' : 'badge-pending');
+      let statusText = j.status==='ready' ? 'तैयार है' : (j.status==='delivered' ? 'डिलीवर' : 'प्रोग्रेस में');
+      return `
+        <div class="card">
+          <div class="card-head">
+            <span class="tag-title" style="color:var(--repair-theme)">#${j.id} <small style="color:var(--muted); font-weight:normal;">(${j.date})</small></span>
+            <span class="status-badge ${badgeClass}">${statusText}</span>
+          </div>
+          <div style="font-weight:700; font-size:0.95rem;">👤 ${j.name} &bull; 📞 ${j.phone}</div>
+          <div style="font-size:0.83rem; color:#475569; margin:4px 0;">💻 <b>मॉडल:</b> ${j.model || 'N/A'}</div>
+          <div style="font-size:0.83rem; color:#475569; margin-bottom:4px;">⚠️ <b>कंप्लेंट:</b> ${j.issue || 'सर्विसिंग'}</div>
+          <div style="display:flex; justify-content:space-between; background:#f8fafc; padding:8px 10px; border-radius:6px; font-weight:700; font-size:0.85rem; margin-top:6px;">
+            <span>खर्च: ₹${j.cost}</span>
+            <span>जमा: ₹${j.advance}</span>
+            <span style="${bal>0?'color:var(--danger)':''}">बाकी: ₹${bal}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px solid #f1f5f9; gap:6px; flex-wrap:wrap;">
+            <select onchange="updateRepairStatus('${j.id}', this.value)" style="padding:6px; font-size:0.8rem; border-radius:6px; border:1px solid #cbd5e1;">
+              <option value="pending" ${j.status==='pending'?'selected':''}>पेंडिंग</option>
+              <option value="testing" ${j.status==='testing'?'selected':''}>टेस्टिंग</option>
+              <option value="ready" ${j.status==='ready'?'selected':''}>तैयार</option>
+              <option value="delivered" ${j.status==='delivered'?'selected':''}>डिलीवर</option>
+            </select>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-outline" onclick="printReceipt('repair', '${j.id}')">🖨️ पर्ची</button>
+              <button class="btn btn-wa" onclick="sendRepairWA('${j.id}')">💬 WhatsApp</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 2. रिपेयर उधारी
+  function renderRepairUdhari(q) {
+    const box = document.getElementById('viewContainer');
+    const list = (appData.repairs || []).filter(j => ((Number(j.cost)||0) - (Number(j.advance)||0)) > 0);
+    if(list.length === 0) { box.innerHTML = '<div style="text-align:center; padding:30px; color:#16a34a; font-weight:700;">बहुत बढ़िया! रिपेयरिंग में कोई उधारी बकाया नहीं है।</div>'; return; }
+
+    box.innerHTML = list.map(j => {
+      const bal = (Number(j.cost)||0) - (Number(j.advance)||0);
+      return `
+        <div class="card" style="border-left: 4px solid var(--danger);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700; font-size:0.95rem;">${j.name} (#${j.id})</div>
+              <div style="font-size:0.82rem; color:var(--muted);">📞 ${j.phone} &bull; ${j.model}</div>
+              <div style="color:var(--danger); font-weight:800; font-size:0.92rem; margin-top:3px;">बाकी उधारी: ₹${bal}</div>
+            </div>
+            <button class="btn btn-wa" onclick="sendUdhariWA('${j.phone}', '${j.name}', '${j.id}', '${bal}')">🔔 तकादा भेजें</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 3. पार्ट्स
+  function renderPartsView(q) {
+    const box = document.getElementById('viewContainer');
+    let list = appData.parts || [];
+    if(q) list = list.filter(p => p.name.toLowerCase().includes(q));
+    if(list.length === 0) { box.innerHTML = '<div style="text-align:center; padding:30px; color:#94a3b8;">कोई स्पेयर पार्ट नहीं मिला।</div>'; return; }
+
+    box.innerHTML = list.map(p => `
+      <div class="card">
+        <div class="card-head">
+          <span class="tag-title">${p.name}</span>
+          <span class="status-badge badge-pending">स्टॉक: ${p.qty} पीस</span>
+        </div>
+        <div style="font-weight:700; font-size:0.9rem; margin-bottom:8px;">लागत/रेट: ₹${p.price}</div>
+        <div style="display:flex; justify-content:flex-end; gap:6px;">
+          <button class="btn btn-outline" onclick="changePartQty('${p.id}', 1)">+1 जोड़ें</button>
+          <button class="btn btn-outline" onclick="changePartQty('${p.id}', -1)">-1 घटाएँ</button>
+          <button class="btn btn-danger" onclick="deletePart('${p.id}')">हटाएँ</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // 4. सेल्स: लैपटॉप इन्वेंट्री
+  function renderSaleInventory(q) {
+    const box = document.getElementById('viewContainer');
+    let list = appData.salesStock || [];
+    if(q) list = list.filter(s => s.model.toLowerCase().includes(q) || s.cpu.toLowerCase().includes(q));
+    if(list.length === 0) { box.innerHTML = '<div style="text-align:center; padding:30px; color:#94a3b8;">कोई लैपटॉप स्टॉक में नहीं है। नया जोड़ें।</div>'; return; }
+
+    box.innerHTML = list.map(s => `
+      <div class="card">
+        <div class="card-head">
+          <span class="tag-title" style="color:var(--sale-theme)">💻 ${s.model}</span>
+          <span class="status-badge badge-ready">उपलब्ध</span>
+        </div>
+        <div style="font-size:0.85rem; color:#334155; margin:3px 0;">⚙️ <b>कॉन्फ़िग:</b> ${s.cpu} | ${s.ram} | ${s.storage}</div>
+        <div style="font-size:0.82rem; color:var(--muted);">🛡️ ${s.warranty}</div>
+        <div style="font-size:1.15rem; font-weight:800; color:var(--sale-theme); margin:8px 0;">कीमत: ₹${s.price}/-</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f5f9; padding-top:8px;">
+          <button class="btn btn-danger" onclick="deleteStock('${s.id}')">हटाएँ</button>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-wa" onclick="shareStockWA('${s.model}', '${s.cpu}', '${s.ram}', '${s.storage}', '${s.price}')">📤 शेयर करें</button>
+            <button class="btn btn-sale" onclick="openSaleModalForStock('${s.model}', '${s.price}')">🧾 बेचें (बिल)</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // 5. सेल्स: बिक्री ऑर्डर्स
+  function renderSaleOrders(q) {
+    const box = document.getElementById('viewContainer');
+    let list = appData.salesOrders || [];
+    if(q) list = list.filter(o => o.name.toLowerCase().includes(q) || o.phone.includes(q) || o.model.toLowerCase().includes(q));
+    if(list.length === 0) { box.innerHTML = '<div style="text-align:center; padding:30px; color:#94a3b8;">कोई बिक्री बिल दर्ज नहीं है।</div>'; return; }
+
+    box.innerHTML = list.map(o => {
+      const bal = (Number(o.amount)||0) - (Number(o.paid)||0);
+      return `
+        <div class="card">
+          <div class="card-head">
+            <span class="tag-title" style="color:var(--sale-theme)">बिल #${o.id} <small style="color:var(--muted); font-weight:normal;">(${o.date})</small></span>
+            <span class="status-badge ${bal>0?'badge-pending':'badge-ready'}">${bal>0?'उधारी बाकी':'फुल पेड'}</span>
+          </div>
+          <div style="font-weight:700;">👤 ${o.name} &bull; 📞 ${o.phone}</div>
+          <div style="font-size:0.83rem; color:#475569; margin:3px 0;">💻 ${o.model}</div>
+          <div style="font-size:0.82rem; color:var(--muted);">🛡️ ${o.warranty}</div>
+          <div style="display:flex; justify-content:space-between; background:#f8fafc; padding:8px 10px; border-radius:6px; font-weight:700; margin-top:6px; font-size:0.85rem;">
+            <span>कुल: ₹${o.amount}</span>
+            <span>जमा: ₹${o.paid}</span>
+            <span style="${bal>0?'color:var(--danger)':''}">बाकी: ₹${bal}</span>
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;">
+            <button class="btn btn-outline" onclick="printReceipt('sale', '${o.id}')">🖨️ इनवॉइस</button>
+            <button class="btn btn-wa" onclick="sendSaleBillWA('${o.id}')">💬 WhatsApp बिल</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 6. सेल्स उधारी
+  function renderSaleUdhari(q) {
+    const box = document.getElementById('viewContainer');
+    const list = (appData.salesOrders || []).filter(o => ((Number(o.amount)||0) - (Number(o.paid)||0)) > 0);
+    if(list.length === 0) { box.innerHTML = '<div style="text-align:center; padding:30px; color:#16a34a; font-weight:700;">लैपटॉप सेल्स में कोई उधारी बाकी नहीं है।</div>'; return; }
+
+    box.innerHTML = list.map(o => {
+      const bal = (Number(o.amount)||0) - (Number(o.paid)||0);
+      return `
+        <div class="card" style="border-left: 4px solid var(--danger);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:700; font-size:0.95rem;">${o.name} (#${o.id})</div>
+              <div style="font-size:0.82rem; color:var(--muted);">📞 ${o.phone} &bull; ${o.model}</div>
+              <div style="color:var(--danger); font-weight:800; margin-top:3px;">बाकी उधारी: ₹${bal}</div>
+            </div>
+            <button class="btn btn-wa" onclick="sendUdhariWA('${o.phone}', '${o.name}', '${o.id}', '${bal}')">🔔 तकादा भेजें</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 7. सेल्स कस्टमर CRM
+  function renderSaleCRM(q) {
+    const box = document.getElementById('viewContainer');
+    const orders = appData.salesOrders || [];
+    if(orders.length === 0) { box.innerHTML = '<div style="text-align:center; padding:30px; color:#94a3b8;">कोई कस्टमर डेटा नहीं है।</div>'; return; }
+
+    box.innerHTML = orders.map(o => `
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:700;">👤 ${o.name} &bull; 📞 ${o.phone}</div>
+            <div style="font-size:0.82rem; color:var(--muted);">खरीदा गया: ${o.model} (${o.date})</div>
+          </div>
+          <button class="btn btn-wa" onclick="openDirectChat('${o.phone}', '${o.name}')">💬 चैट</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // मोडल मैनेजमेंट
+  function openActiveModal() {
+    if(masterMode === 'repair') {
+      if(repairTab === 'parts') document.getElementById('partModal').style.display = 'flex';
+      else document.getElementById('repairModal').style.display = 'flex';
+    } else {
+      if(saleTab === 'orders' || saleTab === 'udhari' || saleTab === 'crm') document.getElementById('saleOrderModal').style.display = 'flex';
+      else document.getElementById('stockModal').style.display = 'flex';
+    }
+  }
+
+  function openSaleModalForStock(model, price) {
+    document.getElementById('soModel').value = model;
+    document.getElementById('soAmount').value = price;
+    document.getElementById('saleOrderModal').style.display = 'flex';
+  }
+
+  function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+  function openConfigModal() {
+    document.getElementById('cfgDbUrl').value = localStorage.getItem('ke_cloud_url') || '';
+    document.getElementById('configModal').style.display = 'flex';
+  }
+
+  function saveCloudConfig() {
+    const url = document.getElementById('cfgDbUrl').value.trim();
+    if(url) {
+      localStorage.setItem('ke_cloud_url', url);
+      closeModal('configModal');
+      location.reload();
+    }
+  }
+
+  // सेव फ़ंक्शन्स
+  function saveRepairJob() {
+    const name = document.getElementById('rCustName').value.trim();
+    const phone = document.getElementById('rPhone').value.trim();
+    const model = document.getElementById('rModel').value.trim();
+    const issue = document.getElementById('rIssue').value.trim();
+    const accessories = document.getElementById('rAccessories').value;
+    const cost = document.getElementById('rCost').value.trim() || 0;
+    const advance = document.getElementById('rAdvance').value.trim() || 0;
+    const status = document.getElementById('rStatus').value;
+
+    if(!name || !phone) { alert('ग्राहक का नाम और फोन नंबर आवश्यक है!'); return; }
+
+    const newJob = {
+      id: 'JOB-' + Math.floor(100 + Math.random() * 900),
+      name, phone, model, issue, accessories, cost, advance, status,
+      date: new Date().toLocaleDateString('hi-IN', { day:'numeric', month:'short' })
+    };
+
+    if(!appData.repairs) appData.repairs = [];
+    appData.repairs.unshift(newJob);
+    syncToCloud();
+    closeModal('repairModal');
+    renderCurrentView();
+
+    document.getElementById('rCustName').value = '';
+    document.getElementById('rPhone').value = '';
+    document.getElementById('rModel').value = '';
+    document.getElementById('rIssue').value = '';
+    document.getElementById('rCost').value = '';
+    document.getElementById('rAdvance').value = '';
+  }
+
+  function saveStockItem() {
+    const model = document.getElementById('sModel').value.trim();
+    const cpu = document.getElementById('sCpu').value.trim();
+    const ram = document.getElementById('sRam').value.trim();
+    const storage = document.getElementById('sStorage').value.trim();
+    const price = document.getElementById('sPrice').value.trim();
+    const warranty = document.getElementById('sWarranty').value;
+
+    if(!model || !price) { alert('मॉडल और कीमत अनिवार्य है!'); return; }
+
+    const item = {
+      id: 'STK-' + Date.now().toString().slice(-4),
+      model, cpu, ram, storage, price, warranty
+    };
+
+    if(!appData.salesStock) appData.salesStock = [];
+    appData.salesStock.unshift(item);
+    syncToCloud();
+    closeModal('stockModal');
+    renderCurrentView();
+
+    document.getElementById('sModel').value = '';
+    document.getElementById('sCpu').value = '';
+    document.getElementById('sRam').value = '';
+    document.getElementById('sStorage').value = '';
+    document.getElementById('sPrice').value = '';
+  }
+
+  function saveSaleOrder() {
+    const name = document.getElementById('soCustName').value.trim();
+    const phone = document.getElementById('soPhone').value.trim();
+    const model = document.getElementById('soModel').value.trim();
+    const amount = document.getElementById('soAmount').value.trim() || 0;
+    const paid = document.getElementById('soPaid').value.trim() || 0;
+    const warranty = document.getElementById('soWarranty').value;
+
+    if(!name || !phone) { alert('ग्राहक विवरण आवश्यक है!'); return; }
+
+    const order = {
+      id: 'INV-' + Math.floor(100 + Math.random() * 900),
+      name, phone, model, amount, paid, warranty,
+      date: new Date().toLocaleDateString('hi-IN', { day:'numeric', month:'short' })
+    };
+
+    if(!appData.salesOrders) appData.salesOrders = [];
+    appData.salesOrders.unshift(order);
+    syncToCloud();
+    closeModal('saleOrderModal');
+    renderCurrentView();
+
+    document.getElementById('soCustName').value = '';
+    document.getElementById('soPhone').value = '';
+    document.getElementById('soModel').value = '';
+    document.getElementById('soAmount').value = '';
+    document.getElementById('soPaid').value = '';
+  }
+
+  function savePartItem() {
+    const name = document.getElementById('pName').value.trim();
+    const qty = parseInt(document.getElementById('pQty').value) || 1;
+    const price = parseInt(document.getElementById('pPrice').value) || 0;
+
+    if(!name) return;
+
+    if(!appData.parts) appData.parts = [];
+    appData.parts.unshift({ id: 'PRT-' + Date.now().toString().slice(-4), name, qty, price });
+    syncToCloud();
+    closeModal('partModal');
+    renderCurrentView();
+  }
+
+  function updateRepairStatus(id, st) {
+    const j = appData.repairs.find(x => x.id === id);
+    if(j) {
+      j.status = st;
+      syncToCloud();
+      renderCurrentView();
+    }
+  }
+
+  function deleteStock(id) {
+    if(confirm('स्टॉक से हटाना चाहते हैं?')) {
+      appData.salesStock = appData.salesStock.filter(x => x.id !== id);
+      syncToCloud();
+      renderCurrentView();
+    }
+  }
+
+  function changePartQty(id, delta) {
+    const p = appData.parts.find(x => x.id === id);
+    if(p) {
+      p.qty = Math.max(0, p.qty + delta);
+      syncToCloud();
+      renderCurrentView();
+    }
+  }
+
+  function deletePart(id) {
+    if(confirm('हटाना चाहते हैं?')) {
+      appData.parts = appData.parts.filter(x => x.id !== id);
+      syncToCloud();
+      renderCurrentView();
+    }
+  }
+
+  // WhatsApp फ़ंक्शन्स
+  function sendRepairWA(id) {
+    const j = appData.repairs.find(x => x.id === id);
+    if(!j) return;
+    const bal = (Number(j.cost)||0) - (Number(j.advance)||0);
+    const msg = `*खुशबू इलेक्ट्रॉनिक्स, रेवाड़ी*%0Aनमस्ते ${j.name} जी,%0A*जॉब टोकन:* #${j.id}%0A*लैपटॉप:* ${j.model}%0A*खर्च:* ₹${j.cost} (जमा: ₹${j.advance}, बाकी: ₹${bal})%0A*स्टेटस:* ${j.status==='ready'?'तैयार है, दुकान से ले सकते हैं।':'प्रोग्रेस में है।'}%0A%0A*के. एल. सैनी* 📞 7206770673`;
+    window.open(`https://wa.me/91${j.phone.replace(/[^0-9]/g,'')}?text=${msg}`, '_blank');
+  }
+
+  function sendSaleBillWA(id) {
+    const o = appData.salesOrders.find(x => x.id === id);
+    if(!o) return;
+    const bal = (Number(o.amount)||0) - (Number(o.paid)||0);
+    const msg = `*खुशबू इलेक्ट्रॉनिक्स - लैपटॉप बिक्री रसीद*%0Aनमस्ते ${o.name} जी,%0A*बिल नंबर:* #${o.id}%0A*लैपटॉप:* ${o.model}%0A*कुल बिल:* ₹${o.amount}%0A*प्राप्त:* ₹${o.paid}%0A*बाकी:* ₹${bal}%0A*वारंटी:* ${o.warranty}%0A%0Aखरीदारी के लिए धन्यवाद!%0A*के. एल. सैनी* 📞 7206770673`;
+    window.open(`https://wa.me/91${o.phone.replace(/[^0-9]/g,'')}?text=${msg}`, '_blank');
+  }
+
+  function sendUdhariWA(phone, name, id, bal) {
+    const msg = `*खुशबू इलेक्ट्रॉनिक्स, रेवाड़ी*%0Aनमस्ते ${name} जी,%0Aआपके टोकन/बिल #${id} की बकाया राशि ₹${bal}/- शेष है। कृपया सुविधानुसार भुगतान करने में सहयोग करें।%0A%0A*के. एल. सैनी* 📞 7206770673`;
+    window.open(`https://wa.me/91${phone.replace(/[^0-9]/g,'')}?text=${msg}`, '_blank');
+  }
+
+  function shareStockWA(model, cpu, ram, storage, price) {
+    const msg = `*खुशबू इलेक्ट्रॉनिक्स - लैपटॉप सेल ऑफर!*%0A💻 *मॉडल:* ${model}%0A⚙️ *कॉन्फ़िग:* ${cpu} | ${ram} | ${storage}%0A💰 *कीमत:* मात्र ₹${price}/-%0A%0Aखरीदने के लिए संपर्क करें:%0A*के. एल. सैनी* 📞 7206770673, 7015290445%0A📍 सुंदरलाल मार्केट, नियर एवरेस्ट सिनेमा, रेवाड़ी`;
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+  }
+
+  function openDirectChat(phone, name) {
+    const msg = `*खुशबू इलेक्ट्रॉनिक्स, रेवाड़ी*%0Aनमस्ते ${name} जी! हम आपकी क्या सहायता कर सकते हैं?`;
+    window.open(`https://wa.me/91${phone.replace(/[^0-9]/g,'')}?text=${msg}`, '_blank');
+  }
+
+  function printReceipt(type, id) {
+    if(type === 'repair') {
+      const j = appData.repairs.find(x => x.id === id);
+      if(!j) return;
+      document.getElementById('receiptTypeHeading').innerText = 'रिपेयर जॉब पर्ची';
+      document.getElementById('printContent').innerHTML = `
+        <div><b>टोकन नंबर:</b> #${j.id} &bull; <b>दिनांक:</b> ${j.date}</div>
+        <div><b>ग्राहक:</b> ${j.name} (📞 ${j.phone})</div>
+        <div><b>लैपटॉप:</b> ${j.model || 'N/A'}</div>
+        <div><b>सामान:</b> ${j.accessories}</div>
+        <div><b>कंप्लेंट:</b> ${j.issue}</div>
+        <div style="border-top:1px dashed #666; margin-top:6px; padding-top:4px;">
+          <b>कुल खर्च:</b> ₹${j.cost} &bull; <b>जमा:</b> ₹${j.advance}<br>
+          <b style="font-size:14px;">बाकी भुगतान: ₹${(Number(j.cost)||0)-(Number(j.advance)||0)}</b>
+        </div>
+      `;
+    } else {
+      const o = appData.salesOrders.find(x => x.id === id);
+      if(!o) return;
+      document.getElementById('receiptTypeHeading').innerText = 'लैपटॉप बिक्री रसीद';
+      document.getElementById('printContent').innerHTML = `
+        <div><b>बिल नंबर:</b> #${o.id} &bull; <b>दिनांक:</b> ${o.date}</div>
+        <div><b>ग्राहक:</b> ${o.name} (📞 ${o.phone})</div>
+        <div><b>लैपटॉप मॉडल:</b> ${o.model}</div>
+        <div><b>वारंटी अवधि:</b> ${o.warranty}</div>
+        <div style="border-top:1px dashed #666; margin-top:6px; padding-top:4px;">
+          <b>कुल बिल:</b> ₹${o.amount} &bull; <b>प्राप्त:</b> ₹${o.paid}<br>
+          <b style="font-size:14px;">बाकी उधारी: ₹${(Number(o.amount)||0)-(Number(o.paid)||0)}</b>
+        </div>
+      `;
+    }
+    window.print();
+  }
+
+  // इनिशियलाइज़ेशन
+  initCloud();
+  renderCurrentView();
+</script>
+</body>
+</html>
